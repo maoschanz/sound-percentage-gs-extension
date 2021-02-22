@@ -7,7 +7,7 @@ const Main = imports.ui.main;
 const Volume = imports.ui.status.volume;
 
 const ShellVersion = imports.misc.config.PACKAGE_VERSION;
-let PRIMARY_SIGNAL_ID, INPUT_SIGNAL_ID;
+let PRIMARY_SIGNAL_ID, INPUT_SIGNAL_ID, INPUT_VISIBLE_SIGNAL_ID;
 
 function init() {}
 
@@ -16,8 +16,8 @@ function init() {}
 function showLabel(primaryPercentage, inputPercentage) {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
 
-	volumeIndicator._primaryPercentageLabel.text = primaryPercentage + '%';
-	volumeIndicator._inputPercentageLabel.text = inputPercentage + '%';
+	volumeIndicator._primaryPercentageLabel.text = primaryPercentage;
+	volumeIndicator._inputPercentageLabel.text = inputPercentage;
 }
 
 function updateVolume() {
@@ -59,6 +59,12 @@ function updateVolume() {
 		inputPercent = Math.round(volume / virtMax * 100);
 	}
 
+	primaryPercent += '%';
+	inputPercent += '%';
+	if (!volumeIndicator._inputIndicator.visible) {
+		inputPercent = '';  // no idea how to handle this better
+	}
+
 	showLabel(primaryPercent, inputPercent);
 }
 
@@ -84,13 +90,15 @@ function enable() {
 	updateVolume();
 	PRIMARY_SIGNAL_ID = volumeIndicator._volumeMenu._output.connect('stream-updated', updateVolume);
 	INPUT_SIGNAL_ID = volumeIndicator._volumeMenu._input.connect('stream-updated', updateVolume);
+	INPUT_VISIBLE_SIGNAL_ID = volumeIndicator._volumeMenu.connect('input-visible-changed', updateVolume);
 }
 
 function disable() {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
 
 	volumeIndicator._volumeMenu._output.disconnect(PRIMARY_SIGNAL_ID);
-	volumeIndicator._volumeMenu._output.disconnect(INPUT_SIGNAL_ID);
+	volumeIndicator._volumeMenu._input.disconnect(INPUT_SIGNAL_ID);
+	volumeIndicator._volumeMenu.disconnect(INPUT_VISIBLE_SIGNAL_ID);
 	volumeIndicator._primaryPercentageLabel.destroy();
 	volumeIndicator._inputPercentageLabel.destroy();
 }
