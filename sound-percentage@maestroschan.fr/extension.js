@@ -7,63 +7,92 @@ const Main = imports.ui.main;
 const Volume = imports.ui.status.volume;
 
 const ShellVersion = imports.misc.config.PACKAGE_VERSION;
-let SIGNAL_ID;
+let PRIMARY_SIGNAL_ID, INPUT_SIGNAL_ID;
 
 function init() {}
 
 //------------------------------------------------------------------------------
 
-function showLabel(percentage) {
+function showLabel(primaryPercentage, inputPercentage) {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
-	volumeIndicator._percentageLabel.text = percentage + '%';
+
+	volumeIndicator._primaryPercentageLabel.text = primaryPercentage + '%';
+	volumeIndicator._inputPercentageLabel.text = inputPercentage + '%';
 }
 
 function updateVolume() {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
-	let percent = 0;
-	let muted, virtMax, volume;
+
+	let primaryPercent = 0, inputPercent = 0;
+	let virtMax, primaryMuted, primaryVolume, inputMuted, inputVolume;
+
 	try {
-		muted = volumeIndicator._volumeMenu._output._stream.is_muted;
+		primaryMuted = volumeIndicator._volumeMenu._output._stream.is_muted;
+	} catch (e) {
+		primaryMuted = true;
+		primaryPercent = '?';
+	}
+
+	try {
+		inputMuted = volumeIndicator._volumeMenu._input._stream.is_muted;
+	} catch (e) {
+		inputMuted = true;
+		inputPercent = '?';
+	}
+
+	try {
 		virtMax = volumeIndicator._volumeMenu._control.get_vol_max_norm();
 	} catch (e) {
-		muted = true;
-		percent = '?';
+		primaryMuted = true;
+		inputMuted = true;
+		primaryPercent = '?';
+		inputPercent = '?';
 	}
-	
-	if (!muted) {
-		volume = volumeIndicator._volumeMenu._output.stream.volume;
-		percent = Math.round(volume / virtMax * 100);
+
+	if (!primaryMuted) {
+		let volume = volumeIndicator._volumeMenu._output.stream.volume;
+		primaryPercent = Math.round(volume / virtMax * 100);
 	}
-	
-	showLabel(percent);
+
+	if (!inputMuted) {
+		let volume = volumeIndicator._volumeMenu._input.stream.volume;
+		inputPercent = Math.round(volume / virtMax * 100);
+	}
+
+	showLabel(primaryPercent, inputPercent);
 }
 
 //------------------------------------------------------------------------------
 
 function enable() {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
-	volumeIndicator._percentageLabel = new St.Label({
+
+	volumeIndicator._primaryPercentageLabel = new St.Label({
+		y_expand: true,
+		y_align: Clutter.ActorAlign.CENTER
+	});
+	volumeIndicator._inputPercentageLabel = new St.Label({
 		y_expand: true,
 		y_align: Clutter.ActorAlign.CENTER
 	});
 
-	let useIndicators = parseInt(ShellVersion.split('.')[1]) < 35;
-	if (useIndicators) {
-		volumeIndicator.indicators.add(volumeIndicator._percentageLabel);
-		volumeIndicator.indicators.add_style_class_name('power-status');
-	} else {
-		volumeIndicator.add(volumeIndicator._percentageLabel);
-		volumeIndicator.add_style_class_name('power-status');
-	}
+	volumeIndicator.add(volumeIndicator._primaryPercentageLabel);
+	volumeIndicator.set_child_at_index(volumeIndicator._primaryPercentageLabel, 1);
+	volumeIndicator.add(volumeIndicator._inputPercentageLabel);
+	volumeIndicator.add_style_class_name('power-status');
 
 	updateVolume();
-	SIGNAL_ID = volumeIndicator._volumeMenu._output.connect('stream-updated', updateVolume);
+	PRIMARY_SIGNAL_ID = volumeIndicator._volumeMenu._output.connect('stream-updated', updateVolume);
+	INPUT_SIGNAL_ID = volumeIndicator._volumeMenu._input.connect('stream-updated', updateVolume);
 }
 
 function disable() {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
-	volumeIndicator._volumeMenu._output.disconnect(SIGNAL_ID);
-	volumeIndicator._percentageLabel.destroy();
+
+	volumeIndicator._volumeMenu._output.disconnect(PRIMARY_SIGNAL_ID);
+	volumeIndicator._volumeMenu._output.disconnect(INPUT_SIGNAL_ID);
+	volumeIndicator._primaryPercentageLabel.destroy();
+	volumeIndicator._inputPercentageLabel.destroy();
 }
 
 //------------------------------------------------------------------------------
