@@ -7,63 +7,100 @@ const Main = imports.ui.main;
 const Volume = imports.ui.status.volume;
 
 const ShellVersion = imports.misc.config.PACKAGE_VERSION;
-let SIGNAL_ID;
+let PRIMARY_SIGNAL_ID, INPUT_SIGNAL_ID, INPUT_VISIBLE_SIGNAL_ID;
 
 function init() {}
 
 //------------------------------------------------------------------------------
 
-function showLabel(percentage) {
+function showLabel(outputPercentage, inputPercentage) {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
-	volumeIndicator._percentageLabel.text = percentage + '%';
+
+	volumeIndicator._outputPercentageLabel.text = outputPercentage;
+	volumeIndicator._inputPercentageLabel.text = inputPercentage;
 }
 
 function updateVolume() {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
-	let percent = 0;
-	let muted, virtMax, volume;
+
+	let outputPercent = 0, inputPercent = 0;
+	let virtMax, outputMuted, outputVolume, inputMuted, inputVolume;
+
 	try {
-		muted = volumeIndicator._volumeMenu._output._stream.is_muted;
+		outputMuted = volumeIndicator._volumeMenu._output._stream.is_muted;
+	} catch (e) {
+		outputMuted = true;
+		outputPercent = '?';
+	}
+
+	try {
+		inputMuted = volumeIndicator._volumeMenu._input._stream.is_muted;
+	} catch (e) {
+		inputMuted = true;
+		inputPercent = '?';
+	}
+
+	try {
 		virtMax = volumeIndicator._volumeMenu._control.get_vol_max_norm();
 	} catch (e) {
-		muted = true;
-		percent = '?';
+		outputMuted = true;
+		inputMuted = true;
+		outputPercent = '?';
+		inputPercent = '?';
 	}
-	
-	if (!muted) {
-		volume = volumeIndicator._volumeMenu._output.stream.volume;
-		percent = Math.round(volume / virtMax * 100);
+
+	if (!outputMuted) {
+		let volume = volumeIndicator._volumeMenu._output.stream.volume;
+		outputPercent = Math.round(volume / virtMax * 100);
 	}
-	
-	showLabel(percent);
+
+	if (!inputMuted) {
+		let volume = volumeIndicator._volumeMenu._input.stream.volume;
+		inputPercent = Math.round(volume / virtMax * 100);
+	}
+
+	outputPercent += '%';
+	inputPercent += '%';
+	if (!volumeIndicator._inputIndicator.visible) {
+		inputPercent = '';  // no idea how to handle this better
+	}
+
+	showLabel(outputPercent, inputPercent);
 }
 
 //------------------------------------------------------------------------------
 
 function enable() {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
-	volumeIndicator._percentageLabel = new St.Label({
+
+	volumeIndicator._outputPercentageLabel = new St.Label({
+		y_expand: true,
+		y_align: Clutter.ActorAlign.CENTER
+	});
+	volumeIndicator._inputPercentageLabel = new St.Label({
 		y_expand: true,
 		y_align: Clutter.ActorAlign.CENTER
 	});
 
-	let useIndicators = parseInt(ShellVersion.split('.')[1]) < 35;
-	if (useIndicators) {
-		volumeIndicator.indicators.add(volumeIndicator._percentageLabel);
-		volumeIndicator.indicators.add_style_class_name('power-status');
-	} else {
-		volumeIndicator.add(volumeIndicator._percentageLabel);
-		volumeIndicator.add_style_class_name('power-status');
-	}
+	volumeIndicator.add(volumeIndicator._outputPercentageLabel);
+	volumeIndicator.set_child_at_index(volumeIndicator._outputPercentageLabel, 1);
+	volumeIndicator.add(volumeIndicator._inputPercentageLabel);
+	volumeIndicator.add_style_class_name('power-status');
 
 	updateVolume();
-	SIGNAL_ID = volumeIndicator._volumeMenu._output.connect('stream-updated', updateVolume);
+	PRIMARY_SIGNAL_ID = volumeIndicator._volumeMenu._output.connect('stream-updated', updateVolume);
+	INPUT_SIGNAL_ID = volumeIndicator._volumeMenu._input.connect('stream-updated', updateVolume);
+	INPUT_VISIBLE_SIGNAL_ID = volumeIndicator._volumeMenu.connect('input-visible-changed', updateVolume);
 }
 
 function disable() {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
-	volumeIndicator._volumeMenu._output.disconnect(SIGNAL_ID);
-	volumeIndicator._percentageLabel.destroy();
+
+	volumeIndicator._volumeMenu._output.disconnect(PRIMARY_SIGNAL_ID);
+	volumeIndicator._volumeMenu._input.disconnect(INPUT_SIGNAL_ID);
+	volumeIndicator._volumeMenu.disconnect(INPUT_VISIBLE_SIGNAL_ID);
+	volumeIndicator._outputPercentageLabel.destroy();
+	volumeIndicator._inputPercentageLabel.destroy();
 }
 
 //------------------------------------------------------------------------------
