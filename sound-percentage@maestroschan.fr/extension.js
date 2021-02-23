@@ -13,24 +13,24 @@ function init() {}
 
 //------------------------------------------------------------------------------
 
-function showLabel(primaryPercentage, inputPercentage) {
+function showLabel(outputPercentage, inputPercentage) {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
 
-	volumeIndicator._primaryPercentageLabel.text = primaryPercentage;
+	volumeIndicator._outputPercentageLabel.text = outputPercentage;
 	volumeIndicator._inputPercentageLabel.text = inputPercentage;
 }
 
 function updateVolume() {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
 
-	let primaryPercent = 0, inputPercent = 0;
-	let virtMax, primaryMuted, primaryVolume, inputMuted, inputVolume;
+	let outputPercent = 0, inputPercent = 0;
+	let virtMax, outputMuted, outputVolume, inputMuted, inputVolume;
 
 	try {
-		primaryMuted = volumeIndicator._volumeMenu._output._stream.is_muted;
+		outputMuted = volumeIndicator._volumeMenu._output._stream.is_muted;
 	} catch (e) {
-		primaryMuted = true;
-		primaryPercent = '?';
+		outputMuted = true;
+		outputPercent = '?';
 	}
 
 	try {
@@ -43,15 +43,15 @@ function updateVolume() {
 	try {
 		virtMax = volumeIndicator._volumeMenu._control.get_vol_max_norm();
 	} catch (e) {
-		primaryMuted = true;
+		outputMuted = true;
 		inputMuted = true;
-		primaryPercent = '?';
+		outputPercent = '?';
 		inputPercent = '?';
 	}
 
-	if (!primaryMuted) {
+	if (!outputMuted) {
 		let volume = volumeIndicator._volumeMenu._output.stream.volume;
-		primaryPercent = Math.round(volume / virtMax * 100);
+		outputPercent = Math.round(volume / virtMax * 100);
 	}
 
 	if (!inputMuted) {
@@ -59,13 +59,13 @@ function updateVolume() {
 		inputPercent = Math.round(volume / virtMax * 100);
 	}
 
-	primaryPercent += '%';
+	outputPercent += '%';
 	inputPercent += '%';
 	if (!volumeIndicator._inputIndicator.visible) {
 		inputPercent = '';  // no idea how to handle this better
 	}
 
-	showLabel(primaryPercent, inputPercent);
+	showLabel(outputPercent, inputPercent);
 }
 
 //------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ function updateVolume() {
 function enable() {
 	let volumeIndicator = Main.panel.statusArea.aggregateMenu._volume;
 
-	volumeIndicator._primaryPercentageLabel = new St.Label({
+	volumeIndicator._outputPercentageLabel = new St.Label({
 		y_expand: true,
 		y_align: Clutter.ActorAlign.CENTER
 	});
@@ -82,8 +82,8 @@ function enable() {
 		y_align: Clutter.ActorAlign.CENTER
 	});
 
-	volumeIndicator.add(volumeIndicator._primaryPercentageLabel);
-	volumeIndicator.set_child_at_index(volumeIndicator._primaryPercentageLabel, 1);
+	volumeIndicator.add(volumeIndicator._outputPercentageLabel);
+	volumeIndicator.set_child_at_index(volumeIndicator._outputPercentageLabel, 1);
 	volumeIndicator.add(volumeIndicator._inputPercentageLabel);
 	volumeIndicator.add_style_class_name('power-status');
 
@@ -99,7 +99,7 @@ function disable() {
 	volumeIndicator._volumeMenu._output.disconnect(PRIMARY_SIGNAL_ID);
 	volumeIndicator._volumeMenu._input.disconnect(INPUT_SIGNAL_ID);
 	volumeIndicator._volumeMenu.disconnect(INPUT_VISIBLE_SIGNAL_ID);
-	volumeIndicator._primaryPercentageLabel.destroy();
+	volumeIndicator._outputPercentageLabel.destroy();
 	volumeIndicator._inputPercentageLabel.destroy();
 }
 
