@@ -3,7 +3,8 @@
 	"description": "Display the current sound percentage in the system tray",
 	"name": "Sound percentage",
 	"shell-version": [
-		"3.36"
+		"3.36",
+		"40.5"
 	],
 	"url": "https://github.com/maoschanz/sound-percentage-gs-extension",
 	"uuid": "sound-percentage@maestroschan.fr",
