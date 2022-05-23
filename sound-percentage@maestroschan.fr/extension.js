@@ -1,6 +1,6 @@
 // sound-percentage@maestroschan.fr/extension.js
 // GPL v3
-// Copyright Romain F. T.
+// Copyright Romain F. T. 2018-2022
 
 const { Clutter, St } = imports.gi;
 const Main = imports.ui.main;
