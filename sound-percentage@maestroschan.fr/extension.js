@@ -90,7 +90,8 @@ function enable() {
 	updateVolume();
 	PRIMARY_SIGNAL_ID = volumeIndicator._output.connect('stream-updated', updateVolume);
 	INPUT_SIGNAL_ID = volumeIndicator._input.connect('stream-updated', updateVolume);
-	INPUT_VISIBLE_SIGNAL_ID = volumeIndicator.connect('input-visible-changed', updateVolume);
+	INPUT_STREAM_ADDED_SIGNAL_ID = volumeIndicator._input._control.connect('stream-added', updateVolume);
+	INPUT_STREAM_REMOVED_SIGNAL_ID = volumeIndicator._input._control.connect('stream-removed', updateVolume);
 }
 
 function disable() {
@@ -98,7 +99,8 @@ function disable() {
 
 	volumeIndicator._output.disconnect(PRIMARY_SIGNAL_ID);
 	volumeIndicator._input.disconnect(INPUT_SIGNAL_ID);
-	volumeIndicator.disconnect(INPUT_VISIBLE_SIGNAL_ID);
+	volumeIndicator._input._control.disconnect(INPUT_STREAM_ADDED_SIGNAL_ID);
+	volumeIndicator._input._control.disconnect(INPUT_STREAM_REMOVED_SIGNAL_ID);
 	volumeIndicator._outputPercentageLabel.destroy();
 	volumeIndicator._inputPercentageLabel.destroy();
 }
