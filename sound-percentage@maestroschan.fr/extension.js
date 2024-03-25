@@ -1,7 +1,7 @@
 // sound-percentage@maestroschan.fr/extension.js
 // GPL v3
 // Copyright Romain F. T. 2018-2022
-// Copyright Ignaz Kraft  2023-2023
+// Copyright Ignaz Kraft  2023-2024
 
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
@@ -83,8 +83,7 @@ export default class SoundPercentageExtension {
 				y_align: Clutter.ActorAlign.CENTER
 			});
 
-			indicator.add(indicator._percentageLabel);
-			indicator.set_child_at_index(indicator._percentageLabel, 1);
+			indicator.add_child(indicator._percentageLabel);
 			indicator.add_style_class_name('power-status');
 		}
 
